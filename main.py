@@ -14,11 +14,12 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from helpers.keychain import get_password_from_keychain, get_password_from_keychain_with_fallback
+from git import Repo, InvalidGitRepositoryError, Remote, RemoteReference, Head, Commit
 
-ITERATIONS = 100000
-
-
-# ENCODING = "utf-8"
+JOURNAL_FOLDER = Path(f"{str(Path.home())}/journal")
+JOURNAL_FILENAME = "journal.txt.enc"
+JOURNAL_PATH = Path(JOURNAL_FOLDER, JOURNAL_FILENAME)
+ITERATIONS = 100_000
 
 
 def _derive_key(password: bytes, salt: bytes, iterations: int = ITERATIONS) -> bytes:
@@ -88,6 +89,7 @@ class Journal(object):
         # self.entries: Optional[List[Entry]] = None
 
     def list_entries(self) -> str:
+        self.git_sync()
         with open(self.path, "rb") as file:
             encrypted_entries: List[bytes] = file.readlines()
 
@@ -99,7 +101,25 @@ class Journal(object):
         # TODO: UTC? Timezone?
         return f"[{entry.created}{f'<{entry.last_modified}>' if entry.last_modified != entry.created else ''}]{entry.body}"
 
+    def git_sync(self) -> None:
+        try:
+            repo: Repo = Repo(JOURNAL_FOLDER)
+        except InvalidGitRepositoryError:
+            print("# Creating git repo")
+            repo: Repo = Repo.init(JOURNAL_FOLDER)
+            # remote_url: str = input("Git remote not initialised, insert URL: ")
+            remote_url: str = "git@github.com:StefanoChiodino/journal.git"
+            origin: Remote = repo.create_remote("origin", remote_url)
+            repo.index.add([JOURNAL_FILENAME])
+            repo.index.commit("init")
+            origin.push("master")
+
+        if repo.is_dirty():
+            repo.remotes.origin.push()
+
     def add_entry(self, entry_body: str) -> None:
+        self.git_sync()
+
         created: datetime = datetime.now()
         entry: Entry = Entry(created, created, entry_body)
 
@@ -113,10 +133,18 @@ class Journal(object):
         with open(self.path, "wb") as file:
             file.writelines([encrypted_formatted_entry])
 
+        self.git_sync()
+
 
 def get_journal() -> Journal:
     password = get_password_from_keychain_with_fallback()
-    return Journal(f"{str(Path.home())}/journal", password)
+    if not os.path.exists(JOURNAL_FOLDER):
+        os.mkdir(JOURNAL_FOLDER)
+
+    if not os.path.exists(JOURNAL_PATH):
+        open(JOURNAL_PATH, 'a').close()
+
+    return Journal(JOURNAL_PATH, password)
 
 
 def print_entries() -> None:
