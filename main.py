@@ -86,7 +86,6 @@ class Journal(object):
     def __init__(self, path: str, password: str):
         self.password: str = password
         self.path: str = path
-        # self.entries: Optional[List[Entry]] = None
 
     def list_entries(self) -> str:
         self.git_sync()
@@ -107,12 +106,14 @@ class Journal(object):
         except InvalidGitRepositoryError:
             print("# Creating git repo")
             repo: Repo = Repo.init(JOURNAL_FOLDER)
-            # remote_url: str = input("Git remote not initialised, insert URL: ")
-            remote_url: str = "git@github.com:StefanoChiodino/journal.git"
+            remote_url: str = input("Git remote not initialised, insert URL: ")
             origin: Remote = repo.create_remote("origin", remote_url)
             repo.index.add([JOURNAL_FILENAME])
             repo.index.commit("init")
             origin.push("master")
+            repo.heads.master.set_tracking_branch(repo.remotes.origin.refs.master)
+
+        repo.remotes.origin.pull()
 
         if repo.is_dirty():
             repo.index.add([JOURNAL_FILENAME])
@@ -124,9 +125,6 @@ class Journal(object):
 
         created: datetime = datetime.now()
         entry: Entry = Entry(created, created, entry_body)
-
-        # if self.entries:
-        #     self.entries += [entry_body]
 
         formatted_entry: str = self.format_entry(entry)
 
