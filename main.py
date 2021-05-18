@@ -115,7 +115,9 @@ class Journal(object):
             origin.push("master")
 
         if repo.is_dirty():
-            repo.remotes.origin.push()
+            repo.index.add([JOURNAL_FILENAME])
+            repo.index.commit("update")
+            repo.remotes.origin.push("master")
 
     def add_entry(self, entry_body: str) -> None:
         self.git_sync()
@@ -130,8 +132,8 @@ class Journal(object):
 
         encrypted_formatted_entry: bytes = password_encrypt(formatted_entry.encode(), self.password)
 
-        with open(self.path, "wb") as file:
-            file.writelines([encrypted_formatted_entry])
+        with open(self.path, "ab") as file:
+            file.write(os.linesep.encode() + encrypted_formatted_entry)
 
         self.git_sync()
 
@@ -170,7 +172,7 @@ def main() -> None:
         args.callable()
     elif args.text:
         journal: Journal = get_journal()
-        journal.add_entry(args.text[0])
+        journal.add_entry(" ".join(args.text).strip())
 
 
 if __name__ == "__main__":
