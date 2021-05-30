@@ -1,159 +1,84 @@
 """ Based on https://stackoverflow.com/questions/2490334/simple-way-to-encode-a-string-according-to-a-password """
 import argparse
 import os
-import secrets
-from datetime import datetime
-from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
 from pathlib import Path
-from typing import List, Optional, Callable
+from typing import Callable, Optional
 
-from cryptography.fernet import Fernet
+from helpers.keychain import get_password_from_keychain_with_fallback, get_password_from_keychain
+from journal_configuration import JournalConfiguration
+from journal import Journal
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
-from helpers.keychain import get_password_from_keychain, get_password_from_keychain_with_fallback
-from git import Repo, InvalidGitRepositoryError, Remote, RemoteReference, Head, Commit
-
-JOURNAL_FOLDER = Path(f"{str(Path.home())}/journal")
-JOURNAL_FILENAME = "journal.txt.enc"
-JOURNAL_PATH = Path(JOURNAL_FOLDER, JOURNAL_FILENAME)
-ITERATIONS = 100_000
+CONFIG_PATH = f"{str(Path.home())}/.giournal"
 
 
-def _derive_key(password: bytes, salt: bytes, iterations: int = ITERATIONS) -> bytes:
-    """Derive a secret key from a given password and salt"""
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(), length=32, salt=salt,
-        iterations=iterations, backend=default_backend())
-    return b64e(kdf.derive(password))
+def initialise_journal(journal_path: str) -> None:
+    print(f"Journal will be created at '{journal_path}'.")
+    password: str
+
+    safe_make_dir_and_file(journal_path)
 
 
-def password_encrypt(message: bytes, password: str, iterations: int = ITERATIONS) -> bytes:
-    salt = secrets.token_bytes(16)
-    key = _derive_key(password.encode(), salt, iterations)
-    return b64e(
-        b'%b%b%b' % (
-            salt,
-            iterations.to_bytes(4, 'big'),
-            b64d(Fernet(key).encrypt(message)),
-        )
-    )
+def get_journal(config_path: str) -> Journal:
+    journal_configuration: JournalConfiguration = get_journal_configuration(config_path)
+
+    password = get_password_from_keychain()
+    if not os.path.exists(journal_configuration.journal_path):
+        initialise_journal(journal_configuration.journal_path)
+
+    return Journal(str(journal_configuration.journal_path), password)
 
 
-def password_decrypt(token: bytes, password: str) -> bytes:
-    decoded = b64d(token)
-    salt, iter, token = decoded[:16], decoded[16:20], b64e(decoded[20:])
-    iterations = int.from_bytes(iter, 'big')
-    key = _derive_key(password.encode(), salt, iterations)
-    return Fernet(key).decrypt(token)
+def safe_make_dir_and_file(file_path: str) -> None:
+    journal_path: Path = Path(file_path)
+    if not os.path.exists(journal_path.parent):
+        os.mkdir(journal_path.parent)
+    if not os.path.exists(journal_path):
+        open(journal_path, 'a').close()
 
 
-#
-# journal_folder_path = f"{str(Path.home())}/giournal"
-#
-# key = Fernet.generate_key()
-#
-# password = getpass.getpass(stream=None)
-#
-# if not os.path.isdir(journal_folder_path):
-#     os.mkdir(journal_folder_path)
-#
-# with open(journal_path, "rb") as file:
-#     data = file.read()
-#     decrypted = password_decrypt(data, password)
-#
-#
-# with tempfile.NamedTemporaryFile(suffix="md") as temp_file:
-#     subprocess.call(["code", "-w", temp_file.name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#     entry: str = f"{decrypted}{os.linesep}{datetime.utcnow()}{os.linesep}{temp_file.read()}{os.linesep}"
-#     encrypted: bytes = password_encrypt(entry.encode(), password)
-#     # TODO: delete tmp file?
-#
-# with open(journal_path, 'wb') as file:
-#     file.write(encrypted)
+def get_journal_configuration(path: str) -> JournalConfiguration:
+    if not os.path.exists(path):
+        initialise_journal_config(path)
+    journal_configuration: JournalConfiguration = JournalConfiguration().load(path)
+    return journal_configuration
 
 
-class Entry(object):
-    def __init__(self, created: datetime, last_modified: datetime, body: str) -> None:
-        self.body: str = body
-        self.last_modified: datetime = last_modified
-        self.created: datetime = created
+def initialise_journal_config(config_path) -> JournalConfiguration:
+    print(f"Creating journal config at '{config_path}'")
+    default_journal_path: str = f"{str(Path.home())}/journal"
+    journal_path = input(f"Journal path [{default_journal_path}]: ") or default_journal_path
+    default_use_keychain: bool = True
+    use_keychain = input(
+        f"Do you want to store your password to your keychain? [{default_use_keychain}]: ") or default_use_keychain
+    default_sync_to_git: bool = True
+    sync_to_git = input(f"Do you want to sync your journal to git? [{default_sync_to_git}]: ") or default_sync_to_git
+    safe_make_dir_and_file(config_path)
+    journal_config: JournalConfiguration = JournalConfiguration(
+        file_path=journal_path,
+        use_keychain=_parse_true_false(use_keychain, default_use_keychain),
+        sync_to_git=_parse_true_false(sync_to_git, default_sync_to_git))
+    journal_config.store(config_path)
+    return journal_config
 
 
-class Journal(object):
-    def __init__(self, path: str, password: str):
-        self.password: str = password
-        self.path: str = path
-
-    def list_entries(self) -> str:
-        self.git_sync()
-        with open(self.path, "rb") as file:
-            encrypted_entries: List[bytes] = file.readlines()
-
-        decrypted: List[str] = [password_decrypt(encrypted_entry, self.password).decode() for encrypted_entry in
-                                encrypted_entries]
-        return os.linesep.join(decrypted)
-
-    def format_entry(self, entry: Entry) -> str:
-        # TODO: UTC? Timezone?
-        return f"[{entry.created}{f'<{entry.last_modified}>' if entry.last_modified != entry.created else ''}]{entry.body}"
-
-    def git_sync(self) -> None:
-        try:
-            repo: Repo = Repo(JOURNAL_FOLDER)
-        except InvalidGitRepositoryError:
-            print("# Creating git repo")
-            repo: Repo = Repo.init(JOURNAL_FOLDER)
-            remote_url: str = input("Git remote not initialised, insert URL: ")
-            origin: Remote = repo.create_remote("origin", remote_url)
-            repo.index.add([JOURNAL_FILENAME])
-            repo.index.commit("init")
-            origin.push("master")
-            repo.heads.master.set_tracking_branch(repo.remotes.origin.refs.master)
-
-        repo.remotes.origin.pull()
-
-        if repo.is_dirty():
-            repo.index.add([JOURNAL_FILENAME])
-            repo.index.commit("update")
-            repo.remotes.origin.push("master")
-
-    def add_entry(self, entry_body: str) -> None:
-        self.git_sync()
-
-        created: datetime = datetime.now()
-        entry: Entry = Entry(created, created, entry_body)
-
-        formatted_entry: str = self.format_entry(entry)
-
-        encrypted_formatted_entry: bytes = password_encrypt(formatted_entry.encode(), self.password)
-
-        with open(self.path, "ab") as file:
-            file.write(os.linesep.encode() + encrypted_formatted_entry)
-
-        self.git_sync()
-
-
-def get_journal() -> Journal:
-    password = get_password_from_keychain_with_fallback()
-    if not os.path.exists(JOURNAL_FOLDER):
-        os.mkdir(JOURNAL_FOLDER)
-
-    if not os.path.exists(JOURNAL_PATH):
-        open(JOURNAL_PATH, 'a').close()
-
-    return Journal(JOURNAL_PATH, password)
+def _parse_true_false(input: str, default: bool) -> bool:
+    if input.lower() in ["true", "yes"]:
+        return True
+    if input.lower() in ["false", "no"]:
+        return False
+    return default
 
 
 def print_entries() -> None:
-    journal: Journal = get_journal()
+    journal: Journal = get_journal(CONFIG_PATH)
     entries: str = journal.list_entries()
     print(entries)
 
 
 def main() -> None:
+    journal_configuration: JournalConfiguration = JournalConfiguration({})
+    journal_configuration.load(CONFIG_PATH)
+
     argument_parser: argparse.ArgumentParser = argparse.ArgumentParser()
     argument_parser.add_argument(
         "--list",
