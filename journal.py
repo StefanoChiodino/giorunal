@@ -19,8 +19,10 @@ class Journal(object):
         with open(self.path, "rb") as file:
             encrypted_entries: List[bytes] = file.readlines()
 
-        decrypted: List[str] = [password_decrypt(encrypted_entry, self.password).decode() for encrypted_entry in
-                                encrypted_entries]
+        decrypted: List[str] = [
+            password_decrypt(encrypted_entry, self.password).decode()
+            for encrypted_entry in encrypted_entries
+        ]
         return os.linesep.join(decrypted)
 
     def format_entry(self, entry: Entry) -> str:
@@ -56,7 +58,9 @@ class Journal(object):
 
         formatted_entry: str = self.format_entry(entry)
 
-        encrypted_formatted_entry: bytes = password_encrypt(formatted_entry.encode(), self.password)
+        encrypted_formatted_entry: bytes = password_encrypt(
+            formatted_entry.encode(), self.password
+        )
 
         with open(self.path, "ab") as file:
             file.write(os.linesep.encode() + encrypted_formatted_entry)
