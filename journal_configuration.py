@@ -55,7 +55,7 @@ def initialise_journal_config(config_path) -> JournalConfiguration:
     # print(f" WARNING: path '{journal_path}', already exists")
     if not os.path.exists(journal_path):
         print(f"Creating path '{journal_path}'")
-        os.mkdir(journal_path)
+        safe_make_dir(journal_path)
 
     default_use_keychain: bool = True
     use_keychain: str = input(f"Do you want to store your password to your keychain? [{default_use_keychain}]: ")

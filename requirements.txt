@@ -5,5 +5,7 @@ GitPython==3.1.17
 importlib-metadata==4.0.1
 keyring==23.0.1
 pycparser==2.20
+python-frontmatter==1.0.0
+PyYAML==5.1
 smmap==4.0.0
 zipp==3.4.1

@@ -8,3 +8,8 @@ def safe_make_dir_and_file(file_path: str) -> None:
         os.mkdir(journal_path.parent)
     if not os.path.exists(journal_path):
         open(journal_path, "a").close()
+
+
+def safe_make_dir(path: str) -> None:
+    if not os.path.exists(path):
+        os.mkdir(path)
