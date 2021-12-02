@@ -22,5 +22,6 @@
     <inspection_tool class="ShellCheck" enabled="true" level="ERROR" enabled_by_default="true">
       <shellcheck_settings value="SC2035" />
     </inspection_tool>
+    <inspection_tool class="SuspiciousTypeOfGuard" enabled="true" level="ERROR" enabled_by_default="true" />
   </profile>
 </component>
