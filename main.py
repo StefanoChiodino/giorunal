@@ -17,6 +17,19 @@ def print_entries() -> None:
     print(entries)
 
 
+def decrypt() -> None:
+    journal: Journal = get_journal(CONFIG_PATH)
+    journal.decrypt()
+    print("All entries have been decrypted, press any key to encrypt them again.")
+    input()
+    journal.encrypt()
+
+
+def encrypt() -> None:
+    journal: Journal = get_journal(CONFIG_PATH)
+    journal.encrypt()
+
+
 def _parse_args(args: List[str]) -> argparse.Namespace:
     argument_parser: argparse.ArgumentParser = argparse.ArgumentParser()
     argument_parser.add_argument(
@@ -25,6 +38,20 @@ def _parse_args(args: List[str]) -> argparse.Namespace:
         const=print_entries,
         dest="callable",
         help="lists all the entries",
+    )
+    argument_parser.add_argument(
+        "--decrypt",
+        action="store_const",
+        const=decrypt,
+        dest="callable",
+        help="decrypt entries, waits for input, re-encrypts all entries",
+    )
+    argument_parser.add_argument(
+        "--encrypt",
+        action="store_const",
+        const=encrypt,
+        dest="callable",
+        help="encrypts all entries",
     )
     argument_parser.add_argument("text", metavar="", nargs="*")
     args: argparse.Namespace = argument_parser.parse_args(args)
