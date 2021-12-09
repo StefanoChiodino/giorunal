@@ -72,7 +72,7 @@ class Journal(object):
         if self.journal_configuration.sync_to_git:
             repo.remotes.origin.pull()
 
-        repo.index.add(".")
+        repo.index.add("*")
         if repo.is_dirty():
             repo.index.commit("update")
             if self.journal_configuration.sync_to_git:
