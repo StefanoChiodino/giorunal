@@ -72,10 +72,11 @@ class Journal(object):
         if self.journal_configuration.sync_to_git:
             repo.remotes.origin.pull()
 
+        repo.index.add(".")
         if repo.is_dirty():
-            repo.index.add(".")
             repo.index.commit("update")
-            repo.remotes.origin.push("master")
+            if self.journal_configuration.sync_to_git:
+                repo.remotes.origin.push("master")
 
     def add_entry(self, entry_body: str) -> None:
         self.git_sync()
