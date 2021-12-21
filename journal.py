@@ -13,6 +13,8 @@ from helpers.filesystem import safe_make_dir_and_file, safe_make_dir
 from helpers.keychain import get_password_from_keychain_with_fallback
 from journal_configuration import JournalConfiguration, get_journal_configuration
 
+FILENAME_DATETIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
+
 
 class Journal(object):
     def __init__(self, journal_configuration: JournalConfiguration) -> None:
@@ -46,7 +48,7 @@ class Journal(object):
         for file_name in file_names:
             decrypted_entry_filename = join(self.journal_configuration.journal_path, file_name)
             with open(decrypted_entry_filename, "r") as decrypted_file:
-                decrypted_frontmatter_entry: Post = frontmatter.load(decrypted_file)
+                decrypted_frontmatter_entry: frontmatter.Post = frontmatter.load(decrypted_file)
 
             decrypted_entry: str = frontmatter.dumps(decrypted_frontmatter_entry)
 
@@ -122,7 +124,7 @@ class Journal(object):
         encrypted_formatted_entry: bytes = password_encrypt(
             formatted_entry.encode(), password
         )
-        filename = created.strftime("%Y_%m_%d-%H_%M_%S")
+        filename = created.strftime(FILENAME_DATETIME_FORMAT)
 
         with open(os.path.join(self.journal_configuration.journal_path, filename), "ab") as file:
             file.write(encrypted_formatted_entry)
