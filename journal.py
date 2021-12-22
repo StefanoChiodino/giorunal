@@ -62,7 +62,6 @@ class Journal(object):
 
             remove(decrypted_entry_filename)
 
-
     def list_entries(self) -> str:
         """ Returns all formatted entries with created date and body. """
         self.git_sync()
@@ -82,7 +81,7 @@ class Journal(object):
 
         return entries
 
-    def _all_entries_file_names(self):
+    def _all_entries_file_names(self) -> List[str]:
         file_names: List[str] = [f for f in listdir(self.journal_configuration.journal_path) if
                                  isfile(join(self.journal_configuration.journal_path, f))
                                  and not f.startswith(".")]
@@ -99,12 +98,14 @@ class Journal(object):
             print("# Creating git repo")
             repo: Repo = Repo.init(self.journal_configuration.journal_path)
             if self.journal_configuration.sync_to_git:
-                remote_url: str = input("Git remote not initialised, insert URL: ")
-                origin: Remote = repo.create_remote("origin", remote_url)
+                origin: Remote = repo.create_remote("origin", self.journal_configuration.git_remote)
                 repo.heads.master.set_tracking_branch(repo.remotes.origin.refs.master)
 
         if self.journal_configuration.sync_to_git:
-            repo.remotes.origin.pull()
+            if not repo.remotes:
+                origin: Remote = repo.create_remote("origin", self.journal_configuration.git_remote)
+                # repo.heads.master.set_tracking_branch(repo.remotes.origin.refs.master)
+            repo.remotes.origin.pull("master")
 
         repo.index.add("*")
         if repo.is_dirty():

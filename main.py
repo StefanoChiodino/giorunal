@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import os
+import platform
 import subprocess
 import sys
 import tempfile
@@ -43,7 +44,17 @@ def editor() -> None:
     with tempfile.TemporaryDirectory() as directory:
         file_name: str = f"{datetime.datetime.now().strftime(FILENAME_DATETIME_FORMAT)}.md"
         file_path: str = os.path.join(directory, file_name)
-        subprocess.call(("code", "--wait", file_path))
+
+        if journal_configuration.editor_path:
+            subprocess.call(journal_configuration.editor_path.split(" ") + [file_path])
+        # Screw this, I'm going in hot!
+        else:
+            if platform.system() == 'Darwin':
+                subprocess.call(('open', file_path))
+            elif platform.system() == 'Windows':
+                os.startfile(file_path)
+            else:
+                subprocess.call(('xdg-open', file_path))
         with open(file_path, "r") as file:
             journal.add_entry("".join(file.readlines()))
 
