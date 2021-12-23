@@ -2,7 +2,7 @@ import unittest
 from tempfile import TemporaryDirectory, mkstemp
 from unittest.mock import patch
 
-from journal_configuration import JournalConfiguration
+from .journal_configuration import JournalConfiguration
 
 
 class TestJournalConfiguration(unittest.TestCase):

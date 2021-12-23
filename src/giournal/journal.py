@@ -7,11 +7,11 @@ from typing import List
 import frontmatter as frontmatter
 from git import Repo, InvalidGitRepositoryError, Remote, NoSuchPathError
 
-from entry import Entry
+from helpers.keychain import get_password_from_keychain_with_fallback
+from .entry import Entry
 from helpers.encryption import password_encrypt, password_decrypt
 from helpers.filesystem import safe_make_dir_and_file, safe_make_dir
-from helpers.keychain import get_password_from_keychain_with_fallback
-from journal_configuration import JournalConfiguration, get_journal_configuration
+from .journal_configuration import JournalConfiguration, get_journal_configuration
 
 FILENAME_DATETIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
 

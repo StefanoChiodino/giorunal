@@ -9,7 +9,7 @@ from tempfile import (
 from typing import List, Tuple
 from unittest.mock import patch, MagicMock
 
-from journal_configuration import JournalConfiguration, initialise_journal_config
+from .journal_configuration import JournalConfiguration, initialise_journal_config
 
 
 class MainTest(unittest.TestCase):

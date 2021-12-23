@@ -12,8 +12,8 @@ from typing import Callable, List
 from json.decoder import JSONDecodeError
 from typing.io import IO
 
-from journal_configuration import JournalConfiguration, initialise_journal_config
-from journal import Journal, get_journal, FILENAME_DATETIME_FORMAT
+from .journal_configuration import JournalConfiguration, initialise_journal_config
+from .journal import Journal, get_journal, FILENAME_DATETIME_FORMAT
 
 CONFIG_PATH = f"{str(Path.home())}/.giournal"
 

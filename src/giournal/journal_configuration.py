@@ -5,7 +5,7 @@ import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union, Dict, Any, List
+from typing import Optional, Dict, Any, List
 import json
 
 from helpers.filesystem import safe_make_dir_and_file
