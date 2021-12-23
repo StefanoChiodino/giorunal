@@ -18,6 +18,11 @@ from journal import Journal, get_journal, FILENAME_DATETIME_FORMAT
 CONFIG_PATH = f"{str(Path.home())}/.giournal"
 
 
+def sync() -> None:
+    journal: Journal = get_journal(CONFIG_PATH)
+    journal.git_sync()
+
+
 def print_entries() -> None:
     journal: Journal = get_journal(CONFIG_PATH)
     entries: str = journal.list_entries()
@@ -27,7 +32,7 @@ def print_entries() -> None:
 def decrypt() -> None:
     journal: Journal = get_journal(CONFIG_PATH)
     journal.decrypt()
-    print("All entries have been decrypted, press any key to encrypt them again.")
+    print("All entries have been decrypted, press enter to encrypt them again.")
     input()
     journal.encrypt()
 
@@ -88,6 +93,13 @@ def _parse_args(args: List[str]) -> argparse.Namespace:
         const=editor,
         dest="callable",
         help="Starts a new note in your editor.",
+    )
+    argument_parser.add_argument(
+        "--sync",
+        action="store_const",
+        const=sync,
+        dest="callable",
+        help="Manually sync from and to the remote.",
     )
     argument_parser.add_argument("text", metavar="", nargs="*")
     args: argparse.Namespace = argument_parser.parse_args(args)

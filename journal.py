@@ -22,7 +22,6 @@ class Journal(object):
 
     def decrypt(self) -> None:
         """ Decrypt all entries in place. """
-        self.git_sync()
         password: str = get_password_from_keychain_with_fallback()
         file_names: List[str] = self._all_entries_file_names()
 
@@ -41,7 +40,6 @@ class Journal(object):
 
     def encrypt(self) -> None:
         """ Encrypt all entries in place. """
-        self.git_sync()
         password: str = get_password_from_keychain_with_fallback()
         file_names: List[str] = [f for f in self._all_entries_file_names() if f.endswith(".md")]
 
@@ -64,7 +62,6 @@ class Journal(object):
 
     def list_entries(self) -> str:
         """ Returns all formatted entries with created date and body. """
-        self.git_sync()
         file_names: List[str] = self._all_entries_file_names()
         password: str = get_password_from_keychain_with_fallback()
         entries: str = ""
@@ -104,7 +101,6 @@ class Journal(object):
         if self.journal_configuration.sync_to_git:
             if not repo.remotes:
                 origin: Remote = repo.create_remote("origin", self.journal_configuration.git_remote)
-                # repo.heads.master.set_tracking_branch(repo.remotes.origin.refs.master)
             repo.remotes.origin.pull("master")
 
         repo.index.add("*")
@@ -114,8 +110,6 @@ class Journal(object):
                 repo.remotes.origin.push("master")
 
     def add_entry(self, entry_body: str) -> None:
-        self.git_sync()
-
         created: datetime = datetime.now()
         entry: Entry = Entry(body=entry_body, created=created, last_modified=created)
 
