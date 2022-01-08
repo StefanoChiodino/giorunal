@@ -41,4 +41,10 @@ setuptools.setup(
         "smmap==4.0.0",
         "zipp==3.4.1",
     ],
+    extras_require={
+        "dev": [
+            "flake8",
+            "pytest",
+        ]
+    },
 )

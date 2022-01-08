@@ -1,12 +1,9 @@
 import unittest
 from tempfile import (
-    mktemp,
-    TemporaryFile,
     TemporaryDirectory,
-    NamedTemporaryFile,
     mkstemp,
 )
-from typing import List, Tuple
+from typing import List
 from unittest.mock import patch, MagicMock
 
 from .journal_configuration import JournalConfiguration, initialise_journal_config

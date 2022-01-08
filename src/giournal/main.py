@@ -7,13 +7,12 @@ import platform
 import subprocess
 import sys
 import tempfile
+from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Callable, List
-from json.decoder import JSONDecodeError
-from typing.io import IO
 
-from .journal_configuration import JournalConfiguration, initialise_journal_config
 from .journal import Journal, get_journal, FILENAME_DATETIME_FORMAT
+from .journal_configuration import JournalConfiguration, initialise_journal_config
 
 CONFIG_PATH = f"{str(Path.home())}/.giournal"
 
@@ -109,7 +108,7 @@ def _parse_args(args: List[str]) -> argparse.Namespace:
 def get_or_create_config() -> JournalConfiguration:
     try:
         journal_configuration: JournalConfiguration = JournalConfiguration.load(CONFIG_PATH)
-    except (JSONDecodeError, FileNotFoundError) as _:
+    except (JSONDecodeError, FileNotFoundError):
         initialise_journal_config(CONFIG_PATH)
         journal_configuration: JournalConfiguration = JournalConfiguration.load(CONFIG_PATH)
     return journal_configuration

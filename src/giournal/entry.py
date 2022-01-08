@@ -1,8 +1,9 @@
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Any
 
 import frontmatter
-from dataclasses import dataclass
+
 
 @dataclass
 class Entry(object):

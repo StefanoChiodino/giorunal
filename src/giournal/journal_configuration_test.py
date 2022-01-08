@@ -1,6 +1,5 @@
 import unittest
-from tempfile import TemporaryDirectory, mkstemp
-from unittest.mock import patch
+from tempfile import mkstemp
 
 from .journal_configuration import JournalConfiguration
 

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-import json
 
-from helpers.filesystem import safe_make_dir_and_file
+from helpers.filesystem import safe_make_dir_and_file, safe_make_dir
 
 
 @dataclass
@@ -83,10 +83,7 @@ def initialise_journal_config(config_path) -> JournalConfiguration:
 
     print(f"# Creating journal config at '{config_path}'")
     default_journal_path: str = f"{str(Path.home())}/journal"
-    journal_path = (
-            input(f"Journal path [{default_journal_path}]: ") or default_journal_path
-    )
-    # print(f" WARNING: path '{journal_path}', already exists")
+    journal_path = (input(f"Journal path [{default_journal_path}]: ") or default_journal_path)
     if not os.path.exists(journal_path):
         print(f"Creating path '{journal_path}'")
         safe_make_dir(journal_path)

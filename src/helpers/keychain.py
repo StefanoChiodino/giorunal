@@ -3,7 +3,7 @@ from getpass import getpass
 from typing import Optional
 
 import keyring as keyring
-from keyring.errors import KeyringError, NoKeyringError
+from keyring.errors import KeyringError
 
 
 def get_password_from_keychain_with_fallback() -> str:
@@ -36,7 +36,8 @@ def set_password_in_keychain(password: Optional[str]) -> None:
         except KeyringError as e:
             if isinstance(e, keyring.errors.NoKeyringError):
                 print(
-                    "Keyring backend not found. Please install one of the supported backends by visiting: https://pypi.org/project/keyring/",
+                    "Keyring backend not found. Please install one of the supported backends by visiting:"
+                    " https://pypi.org/project/keyring/",
                     file=sys.stderr,
                 )
             else:

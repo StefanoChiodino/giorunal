@@ -5,12 +5,12 @@ from os.path import isfile, join
 from typing import List
 
 import frontmatter as frontmatter
-from git import Repo, InvalidGitRepositoryError, Remote, NoSuchPathError
+from git import Repo, InvalidGitRepositoryError, NoSuchPathError
 
-from helpers.keychain import get_password_from_keychain_with_fallback
-from .entry import Entry
 from helpers.encryption import password_encrypt, password_decrypt
 from helpers.filesystem import safe_make_dir_and_file, safe_make_dir
+from helpers.keychain import get_password_from_keychain_with_fallback
+from .entry import Entry
 from .journal_configuration import JournalConfiguration, get_journal_configuration
 
 FILENAME_DATETIME_FORMAT = "%Y_%m_%d-%H_%M_%S"
@@ -95,12 +95,12 @@ class Journal(object):
             print("# Creating git repo")
             repo: Repo = Repo.init(self.journal_configuration.journal_path)
             if self.journal_configuration.sync_to_git:
-                origin: Remote = repo.create_remote("origin", self.journal_configuration.git_remote)
+                repo.create_remote("origin", self.journal_configuration.git_remote)
                 repo.heads.master.set_tracking_branch(repo.remotes.origin.refs.master)
 
         if self.journal_configuration.sync_to_git:
             if not repo.remotes:
-                origin: Remote = repo.create_remote("origin", self.journal_configuration.git_remote)
+                repo.create_remote("origin", self.journal_configuration.git_remote)
             repo.remotes.origin.pull("master")
 
         repo.index.add("*")
