@@ -27,3 +27,11 @@ Alternatively use `python3 main.py --decrypt` to decrypt all your entries in pla
 ## Sync
 
 By default Giournal will sync with git only when you add an entry. To sync manually run `python3 main.py --sync`
+
+# Development
+
+Install development requirements with `pip install -e ".[dev]"`.
+
+Check for formatting using `flake8`.
+
+Test with `python -m pytest`.
